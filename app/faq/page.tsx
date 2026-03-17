@@ -1,3 +1,4 @@
+"use client";
 import Header from "@/components/shared/header";
 import Footer from "@/components/shared/footer";
 import { ChevronDown } from "lucide-react";

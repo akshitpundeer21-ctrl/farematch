@@ -1,4 +1,4 @@
-import { Car, Building, Ship, Yacht } from "lucide-react";
+import { Car, Building, Ship, Sailboat } from "lucide-react";
 
 const DealsCarousel = () => {
   const deals = [
@@ -21,9 +21,9 @@ const DealsCarousel = () => {
       color: "bg-purple-100 text-purple-600",
     },
     {
-      title: "Yacht",
+      title: "Sailboat",
       description: "Up to $20 off",
-      icon: Yacht,
+      icon: Sailboat,
       color: "bg-orange-100 text-orange-600",
     },
   ];

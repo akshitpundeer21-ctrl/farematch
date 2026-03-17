@@ -1,6 +1,6 @@
 import Header from "@/components/shared/header";
 import Footer from "@/components/shared/footer";
-import { Plane, Building, Car, Ship, Yacht, TrainFront, Clock, Percent } from "lucide-react";
+import { Plane, Building, Car, Ship, Sailboat, TrainFront, Clock, Percent } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 export default function DealsPage() {
@@ -69,7 +69,7 @@ export default function DealsPage() {
       case "hotel": return Building;
       case "car": return Car;
       case "cruise": return Ship;
-      case "yacht": return Yacht;
+      case "Sailboat": return Sailboat;
       case "train": return TrainFront;
       default: return Plane;
     }
