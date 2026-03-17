@@ -1,0 +1,571 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client"
+  output   = "../lib/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// User model for authentication
+model User {
+  id                     String           @id @default(cuid())
+  email                  String           @unique
+  name                   String?
+  image                  String?
+  emailVerified          DateTime?
+  passwordHash           String?          // For email/password authentication
+  stripeCustomerId       String?          // For stripe integration
+  loyaltyPoints          Int              @default(0)
+  createdAt              DateTime         @default(now())
+  updatedAt              DateTime         @updatedAt
+  accounts               Account[]
+  sessions               Session[]
+  bookings               Booking[]
+  priceAlerts            PriceAlert[]
+  travelerProfiles       TravelerProfile[]
+  savedTrips             SavedTrip[]
+  paymentMethods         PaymentMethod[]
+  preferences            UserPreferences?
+  notifications          Notification[]
+}
+
+model Account {
+  id                 String  @id @default(cuid())
+  userId             String
+  type               String
+  provider           String
+  providerAccountId  String
+  refresh_token      String?  @db.Text
+  access_token       String?  @db.Text
+  expires_at         Int?
+  token_type         String?
+  scope              String?
+  id_token           String?  @db.Text
+  session_state      String?
+  user               User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model VerificationToken {
+  id         String   @id @default(cuid())
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
+// User preferences model
+model UserPreferences {
+  id            String @id @default(cuid())
+  userId        String @unique
+  currency      String @default("USD")
+  language      String @default("en")
+  timezone      String @default("UTC")
+  darkMode      Boolean @default(false)
+  notifications Boolean @default(true)
+  user          User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+// Traveler profile model (for saving passenger details)
+model TravelerProfile {
+  id           String   @id @default(cuid())
+  userId       String
+  firstName    String
+  lastName     String
+  dateOfBirth  DateTime
+  gender       String?  // Male, Female, Other
+  nationality  String?
+  passportNumber String?
+  passportExpiry DateTime?
+  phone        String?
+  specialNeeds String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+// Saved trips model
+model SavedTrip {
+  id          String   @id @default(cuid())
+  userId      String
+  name        String
+  destination String
+  description String?
+  tripType    String   // flight, hotel, package, etc.
+  searchParams Json    // Store search parameters for easy re-searching
+  isPublic    Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+// Notification model
+model Notification {
+  id         String   @id @default(cuid())
+  userId     String
+  type       String   // price_drop, booking_confirmation, etc.
+  title      String
+  message    String
+  read       Boolean  @default(false)
+  createdAt  DateTime @default(now())
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, read])
+}
+
+// Airline model
+model Airline {
+  id       String @id @default(cuid())
+  name     String
+  iataCode String @unique
+  icaoCode String @unique
+  logoUrl  String?
+  country  String?
+  alliance String? // SkyTeam, Star Alliance, OneWorld
+}
+
+// Airport model
+model Airport {
+  id        String @id @default(cuid())
+  name      String
+  city      String
+  country   String
+  iataCode  String @unique
+  icaoCode  String @unique
+  timezone  String
+  latitude  Float
+  longitude Float
+  country_code String
+}
+
+// Flight model
+model Flight {
+  id            String     @id @default(cuid())
+  flightNumber  String
+  airlineId     String
+  departureTime DateTime
+  arrivalTime   DateTime
+  departureAirportId String
+  arrivalAirportId   String
+  aircraftType  String?
+  duration      Int      // Duration in minutes
+  stops         Int      @default(0)
+  basePrice     Float    // Base price per person
+  currency      String   @default("USD")
+  status        String   // scheduled, delayed, cancelled, etc.
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  airline          Airline   @relation(fields: [airlineId], references: [id])
+  departureAirport Airport   @relation(fields: [departureAirportId], references: [id])
+  arrivalAirport   Airport   @relation(fields: [arrivalAirportId], references: [id])
+  flightSegments   FlightSegment[]
+  priceHistory     FlightPriceHistory[]
+
+  @@index([airlineId])
+  @@index([departureAirportId])
+  @@index([arrivalAirportId])
+}
+
+// Flight segment model (for multi-city flights)
+model FlightSegment {
+  id              String @id @default(cuid())
+  flightId        String
+  departureTime   DateTime
+  arrivalTime     DateTime
+  departureAirportId String
+  arrivalAirportId   String
+  aircraftType    String?
+  duration        Int    // Duration in minutes
+  segmentOrder    Int    // Order of this segment in the flight
+
+  flight           Flight  @relation(fields: [flightId], references: [id], onDelete: Cascade)
+  departureAirport Airport @relation(fields: [departureAirportId], references: [id])
+  arrivalAirport   Airport @relation(fields: [arrivalAirportId], references: [id])
+}
+
+// Flight price history model
+model FlightPriceHistory {
+  id         String   @id @default(cuid())
+  flightId   String
+  date       DateTime @default(now())
+  price      Float    // Price per person
+  currency   String   @default("USD")
+
+  flight     Flight   @relation(fields: [flightId], references: [id], onDelete: Cascade)
+
+  @@index([flightId, date])
+}
+
+// Hotel model
+model Hotel {
+  id             String   @id @default(cuid())
+  name           String
+  description    String?
+  address        String
+  city           String
+  state          String
+  country        String
+  zipCode        String
+  latitude       Float
+  longitude      Float
+  starRating     Int?     // 1-5 stars
+  guestRating    Float?   // 1-10 rating from guests
+  reviewCount    Int      @default(0)
+  amenities      String[] // List of amenities
+  checkInTime    String   // Format: "14:00"
+  checkOutTime   String  // Format: "11:00"
+  images         String[] // URLs of hotel images
+  website        String?
+  phone          String?
+  email          String?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  roomTypes      RoomType[]
+  reviews        HotelReview[]
+
+  @@index([city, country])
+  @@index([starRating])
+}
+
+// Room type model
+model RoomType {
+  id          String @id @default(cuid())
+  hotelId     String
+  name        String
+  description String?
+  size        String? // e.g., "30 sqm"
+  bedType     String? // e.g., "1 Queen", "2 Twins"
+  maxOccupancy Int    @default(2)
+  amenities   String[] // List of room amenities
+  images      String[] // URLs of room images
+  basePrice   Float    // Base price per night
+  currency    String   @default("USD")
+  isAvailable Boolean  @default(true)
+
+  hotel      Hotel    @relation(fields: [hotelId], references: [id], onDelete: Cascade)
+  bookings   Booking[]
+
+  @@index([hotelId])
+}
+
+// Hotel review model
+model HotelReview {
+  id         String   @id @default(cuid())
+  hotelId    String
+  userId     String
+  rating     Int      // 1-5 rating
+  title      String
+  comment    String?
+  helpful    Int      @default(0)
+  createdAt  DateTime @default(now())
+
+  hotel      Hotel    @relation(fields: [hotelId], references: [id], onDelete: Cascade)
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([hotelId])
+}
+
+// Car rental model
+model CarRental {
+  id            String   @id @default(cuid())
+  provider      String   // Company name (Hertz, Avis, etc.)
+  name          String   // Model name
+  description   String?
+  category      String   // Economy, Compact, SUV, etc.
+  seats         Int
+  luggageSpace  Int      // Number of large bags it can hold
+  transmission  String   // Automatic, Manual
+  fuelPolicy    String   // Full to Full, etc.
+  features      String[] // AC, GPS, etc.
+  dailyRate     Float    // Base daily rate
+  currency      String   @default("USD")
+  imageUrls     String[] // URLs of car images
+  location      String   // Main location
+  latitude      Float
+  longitude     Float
+  rating        Float?   // Average rating
+  reviewCount   Int      @default(0)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  carBookings   CarBooking[]
+
+  @@index([category])
+  @@index([location])
+}
+
+// Car booking model
+model CarBooking {
+  id             String         @id @default(cuid())
+  carRentalId    String
+  userId         String
+  bookingId      String         // Links to main booking
+  pickUpLocation String
+  dropOffLocation String
+  pickUpTime     DateTime
+  dropOffTime    DateTime
+  driverAge      Int            // Age of primary driver
+  totalCost      Float
+  currency       String         @default("USD")
+  status         String         @default("confirmed") // confirmed, cancelled, completed
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+
+  carRental      CarRental      @relation(fields: [carRentalId], references: [id])
+  user           User           @relation(fields: [userId], references: [id])
+  booking        Booking        @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+}
+
+// Booking model (main booking that can contain multiple services)
+model Booking {
+  id               String         @id @default(cuid())
+  userId           String
+  bookingReference String         @unique  // Unique booking reference
+  bookingType      String         // flight, hotel, car, package
+  status           String         @default("confirmed") // confirmed, pending, cancelled, completed
+  totalAmount      Float
+  currency         String         @default("USD")
+  createdAt        DateTime       @default(now())
+  updatedAt        DateTime       @updatedAt
+  confirmationDate DateTime?
+
+  user             User           @relation(fields: [userId], references: [id])
+  paymentIntentId  String?        // Stripe payment intent ID
+  flightBookings   FlightBooking[]
+  hotelBookings    HotelBooking[]
+  carBookings      CarBooking[]
+  packageBookings  PackageBooking[]
+  passengers       BookingPassenger[]
+  payments         Payment[]
+}
+
+// Flight booking model (specific to flight bookings)
+model FlightBooking {
+  id            String @id @default(cuid())
+  bookingId     String
+  flightId      String
+  seatNumber    String?
+  travelClass   String // economy, premium_economy, business, first
+  fareType      String // basic, standard, flex
+  baseFare      Float
+  taxesFees     Float  @default(0)
+  totalFare     Float  // baseFare + taxesFees
+  currency      String @default("USD")
+
+  booking       Booking @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  flight        Flight  @relation(fields: [flightId], references: [id])
+  addons        FlightAddon[]
+}
+
+// Flight addon model (baggage, meals, etc.)
+model FlightAddon {
+  id          String @id @default(cuid())
+  flightBookingId String
+  type        String // baggage, meal, insurance, seat_selection
+  description String
+  price       Float
+  currency    String @default("USD")
+
+  flightBooking FlightBooking @relation(fields: [flightBookingId], references: [id], onDelete: Cascade)
+}
+
+// Hotel booking model (specific to hotel bookings)
+model HotelBooking {
+  id            String @id @default(cuid())
+  bookingId     String
+  roomTypeId    String
+  checkIn       DateTime
+  checkOut      DateTime
+  numberOfNights Int
+  numberOfGuests Int
+  baseRate      Float
+  taxesFees     Float @default(0)
+  totalCost     Float // baseRate + taxesFees
+  currency      String @default("USD")
+  specialRequests String?
+
+  booking       Booking @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  roomType      RoomType @relation(fields: [roomTypeId], references: [id])
+  guests        BookingGuest[]
+}
+
+// Booking passenger model (for flight bookings)
+model BookingPassenger {
+  id            String @id @default(cuid())
+  bookingId     String
+  travelerProfileId String?
+  firstName     String
+  lastName      String
+  dateOfBirth   DateTime
+  gender        String?  // Male, Female, Other
+  nationality   String?
+  passportNumber String?
+  passengerType String   // adult, child, infant
+  seatNumber    String?
+
+  booking         Booking         @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  travelerProfile TravelerProfile? @relation(fields: [travelerProfileId], references: [id], onDelete: SetNull)
+}
+
+// Booking guest model (for hotel bookings)
+model BookingGuest {
+  id         String @id @default(cuid())
+  hotelBookingId String
+  firstName  String
+  lastName   String
+  dateOfBirth DateTime?
+  gender     String?  // Male, Female, Other
+
+  hotelBooking HotelBooking @relation(fields: [hotelBookingId], references: [id], onDelete: Cascade)
+}
+
+// Payment model
+model Payment {
+  id              String @id @default(cuid())
+  bookingId       String
+  paymentMethodId String
+  amount          Float
+  currency        String @default("USD")
+  status          String // pending, succeeded, failed, refunded
+  stripePaymentId String? // Stripe payment intent ID
+  transactionId   String? // Internal transaction ID
+  provider        String // stripe, paypal, etc.
+  paidAt          DateTime?
+  createdAt       DateTime @default(now())
+
+  booking         Booking @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  paymentMethod   PaymentMethod @relation(fields: [paymentMethodId], references: [id])
+}
+
+// Payment method model
+model PaymentMethod {
+  id           String @id @default(cuid())
+  userId       String
+  type         String // card, paypal, etc.
+  provider     String // stripe, paypal, etc.
+  last4        String? // Last 4 digits for cards
+  brand        String? // Visa, Mastercard, etc.
+  expiryMonth  Int?
+  expiryYear   Int?
+  isDefault    Boolean @default(false)
+  createdAt    DateTime @default(now())
+
+  user         User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+// Price alert model
+model PriceAlert {
+  id           String @id @default(cuid())
+  userId       String
+  searchType   String // flight, hotel, car, package
+  destination  String
+  origin       String? // For flights
+  departureDate DateTime? // For flights
+  checkInDate  DateTime? // For hotels
+  checkOutDate DateTime? // For hotels
+  currentPrice Float
+  targetPrice  Float? // Price user wants to be notified about
+  isNotified   Boolean @default(false)
+  createdAt    DateTime @default(now())
+  lastChecked  DateTime @default(now())
+
+  user         User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+// Package (vacation package) model
+model Package {
+  id             String   @id @default(cuid())
+  name           String
+  description    String
+  destination    String
+  duration       Int      // In days
+  images         String[] // Package images
+  inclusions     String[] // What's included
+  exclusions     String[] // What's not included
+  minPrice       Float    // Starting price
+  maxPrice       Float?   // Maximum price if varies
+  currency       String   @default("USD")
+  rating         Float?   // Average rating
+  reviewCount    Int      @default(0)
+  availableDates DateTime[] // Array of available dates/travel periods
+  provider       String   // Package provider
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  packageBookings PackageBooking[]
+  reviews        PackageReview[]
+
+  @@index([destination])
+}
+
+// Package booking model
+model PackageBooking {
+  id           String @id @default(cuid())
+  bookingId    String
+  packageId    String
+  startDate    DateTime
+  endDate      DateTime
+  numberOfPeople Int
+  basePrice    Float
+  taxesFees    Float @default(0)
+  totalCost    Float // basePrice + taxesFees
+  currency     String @default("USD")
+
+  booking      Booking @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  package      Package @relation(fields: [packageId], references: [id])
+  packageGuests PackageGuest[]
+}
+
+// Package guest model
+model PackageGuest {
+  id        String @id @default(cuid())
+  packageBookingId String
+  firstName String
+  lastName  String
+  dateOfBirth DateTime?
+  gender    String? // Male, Female, Other
+  isLead   Boolean @default(false) // Is this the lead guest
+
+  packageBooking PackageBooking @relation(fields: [packageBookingId], references: [id], onDelete: Cascade)
+}
+
+// Package review model
+model PackageReview {
+  id         String   @id @default(cuid())
+  packageId  String
+  userId     String
+  rating     Int      // 1-5 rating
+  title      String
+  comment    String?
+  helpful    Int      @default(0)
+  createdAt  DateTime @default(now())
+
+  package    Package  @relation(fields: [packageId], references: [id], onDelete: Cascade)
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([packageId])
+}
