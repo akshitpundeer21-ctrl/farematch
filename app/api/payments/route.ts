@@ -5,8 +5,8 @@ import { headers } from "next/headers";
 // In a real application, you would integrate with Stripe's API
 export async function POST(request: NextRequest) {
   try {
-    const headersList = headers();
-    const contentType = headersList.get('content-type');
+    const headersList = await headers();
+const contentType = headersList.get('content-type');
 
     if (contentType !== 'application/json') {
       return new Response(JSON.stringify({ error: 'Content-Type must be application/json' }), {
