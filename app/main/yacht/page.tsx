@@ -1,20 +1,20 @@
 import Header from "@/components/shared/header";
 import Footer from "@/components/shared/footer";
-import { Yacht, Calendar, Users, MapPin, Star } from "lucide-react";
+import { Sailboat, Calendar, Users, MapPin, Star } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
-export default function YachtPage() {
-  // Mock data for yacht results
-  const mockYachts = [
+export default function SailboatPage() {
+  // Mock data for Sailboat results
+  const mockSailboats = [
     {
       id: "1",
       name: "Ocean Dream",
-      type: "Crewed Yacht",
+      type: "Crewed Sailboat",
       capacity: 8,
       location: "Caribbean",
       duration: 7,
       pricePerDay: 2500,
-      image: "/placeholder-yacht.jpg",
+      image: "/placeholder-Sailboat.jpg",
       rating: 4.9,
       reviewCount: 42,
     },
@@ -26,19 +26,19 @@ export default function YachtPage() {
       location: "Mediterranean",
       duration: 7,
       pricePerDay: 1800,
-      image: "/placeholder-yacht.jpg",
+      image: "/placeholder-Sailboat.jpg",
       rating: 4.7,
       reviewCount: 28,
     },
     {
       id: "3",
       name: "Luxury Escape",
-      type: "Motor Yacht",
+      type: "Motor Sailboat",
       capacity: 10,
       location: "South Pacific",
       duration: 10,
       pricePerDay: 4200,
-      image: "/placeholder-yacht.jpg",
+      image: "/placeholder-Sailboat.jpg",
       rating: 4.8,
       reviewCount: 19,
     },
@@ -50,7 +50,7 @@ export default function YachtPage() {
 
       <main className="flex-grow py-8">
         <div className="container mx-auto px-4">
-          <h1 className="text-3xl font-bold mb-6">Find Yacht Charters</h1>
+          <h1 className="text-3xl font-bold mb-6">Find Sailboat Charters</h1>
 
           {/* Search Form */}
           <div className="bg-white rounded-lg shadow-md p-6 mb-8">
@@ -84,20 +84,20 @@ export default function YachtPage() {
                 </select>
               </div>
               <div className="space-y-2">
-                <label className="text-sm font-medium">Yacht Type</label>
+                <label className="text-sm font-medium">Sailboat Type</label>
                 <select className="w-full p-2 border rounded">
                   <option>Any Type</option>
                   <option>Bareboat Charter</option>
-                  <option>Crewed Yacht</option>
-                  <option>Motor Yacht</option>
-                  <option>Sailing Yacht</option>
+                  <option>Crewed Sailboat</option>
+                  <option>Motor Sailboat</option>
+                  <option>Sailing Sailboat</option>
                 </select>
               </div>
             </div>
 
             <div className="mt-6 flex flex-col sm:flex-row gap-3">
               <Button className="w-full sm:w-auto bg-blue-600 hover:bg-blue-700">
-                Search Yachts
+                Search Sailboats
               </Button>
               <Button variant="outline" className="w-full sm:w-auto border-orange-500 text-orange-500 hover:bg-orange-50">
                 Call for Phone Deals
@@ -107,42 +107,42 @@ export default function YachtPage() {
 
           {/* Results */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {mockYachts.map((yacht) => (
-              <div key={yacht.id} className="bg-white rounded-lg shadow overflow-hidden">
+            {mockSailboats.map((Sailboat) => (
+              <div key={Sailboat.id} className="bg-white rounded-lg shadow overflow-hidden">
                 <img
-                  src={yacht.image}
-                  alt={yacht.name}
+                  src={Sailboat.image}
+                  alt={Sailboat.name}
                   className="w-full h-48 object-cover"
                 />
                 <div className="p-6">
                   <div className="flex justify-between">
                     <div>
-                      <h3 className="text-xl font-bold">{yacht.name}</h3>
-                      <p className="text-gray-600">{yacht.type}</p>
+                      <h3 className="text-xl font-bold">{Sailboat.name}</h3>
+                      <p className="text-gray-600">{Sailboat.type}</p>
                     </div>
                     <div className="text-right">
-                      <div className="text-2xl font-bold text-blue-600">${yacht.pricePerDay}</div>
+                      <div className="text-2xl font-bold text-blue-600">${Sailboat.pricePerDay}</div>
                       <p className="text-sm text-gray-600">per day</p>
                     </div>
                   </div>
 
                   <div className="mt-4 flex items-center text-gray-600">
                     <Users className="w-4 h-4 mr-1" />
-                    <span>Up to {yacht.capacity} guests</span>
+                    <span>Up to {Sailboat.capacity} guests</span>
                   </div>
                   <div className="mt-1 flex items-center text-gray-600">
                     <MapPin className="w-4 h-4 mr-1" />
-                    <span>{yacht.location}</span>
+                    <span>{Sailboat.location}</span>
                   </div>
                   <div className="mt-1 flex items-center text-gray-600">
                     <Calendar className="w-4 h-4 mr-1" />
-                    <span>{yacht.duration} days</span>
+                    <span>{Sailboat.duration} days</span>
                   </div>
 
                   <div className="mt-4 flex items-center">
                     <Star className="w-4 h-4 text-yellow-400 fill-yellow-400 mr-1" />
-                    <span className="text-sm">{yacht.rating}</span>
-                    <span className="text-sm text-gray-500 ml-1">({yacht.reviewCount})</span>
+                    <span className="text-sm">{Sailboat.rating}</span>
+                    <span className="text-sm text-gray-500 ml-1">({Sailboat.reviewCount})</span>
                   </div>
 
                   <div className="mt-6">

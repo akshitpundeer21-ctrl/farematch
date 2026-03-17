@@ -15,7 +15,7 @@ const Header = () => {
     { name: "Hotels", href: "/main/hotels" },
     { name: "Car Rental", href: "/main/car-rental" },
     { name: "Cruises", href: "/main/cruises" },
-    { name: "Yacht", href: "/main/yacht" },
+    { name: "Sailboat", href: "/main/Sailboat" },
     { name: "Amtrak", href: "/main/amtrak" },
     { name: "Deals", href: "/main/deals" },
     { name: "Blog", href: "/main/blog" },

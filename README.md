@@ -47,7 +47,7 @@ faresmatch/
 │   │   ├── hotels/
 │   │   ├── car-rental/
 │   │   ├── cruises/
-│   │   ├── yacht/
+│   │   ├── Sailboat/
 │   │   ├── amtrak/
 │   │   ├── vacation-packages/
 │   │   ├── deals/
